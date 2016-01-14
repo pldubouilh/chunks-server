@@ -73,7 +73,10 @@ function initDht(){
   dht = new DHT({ bootstrap: true, verify: ed.verify })
   dht.on('ready', function () {
     console.log("\n  DHT reached")
-    askUser();
+    if (process.argv[3])
+      unlockKey(process.argv[3])
+    else
+      askUser();
   })
 }
 
