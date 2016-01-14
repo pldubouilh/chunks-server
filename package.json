@@ -1,0 +1,16 @@
+{
+  "name": "Chunks-Server",
+  "version": "0.1",
+  "description": "A Chunks server POC",
+  "author": "pldubouilh",
+  "license": "GPL v3",
+  "homepage": "https://github.com/pldubouilh",
+  "dependencies": {
+    "webtorrent": "0.63.4",
+    "simple-sha1": "*",
+    "ed25519-supercop": "*",
+    "fs": "*",
+    "jsonfile": "*",
+    "prompt": "*"
+  }
+}
