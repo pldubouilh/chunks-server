@@ -25,12 +25,15 @@ var DELAYPUSH = 5 //mn
 var keySet, dht, opts
 var increment = true
 
+debugger;
 if(process.argv[2]){
   keySet = process.argv[2]
   console.log('\n  Reading keys from ' + keySet);
 }
 else{
-  console.log('\n  Need to provide a priv key\n');
+  console.log('\n Chunks Server !'.yellow)
+  console.log('\n Usage : node postLatest.js myKey.priv [Decryption password - optionnal]')
+  console.log('\n Error : Need to provide a private key\n'.red);
   process.exit(1);
 }
 
@@ -145,7 +148,11 @@ function pushStuff(){
   }
 
   // Put stuff @ sha1(pubKey)!
-  dht.put(opts, function (errors, hash) {
+  dht.put(opts, function (err, hash) {
+    if(err){
+      console.log('\n  Error : ' + err);
+      process.exit(1);
+    }
     console.log("\n  DHT updated")
     if(increment)
       seed(dht)
