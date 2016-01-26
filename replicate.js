@@ -51,44 +51,57 @@ function republish(){
 
   // Get and republish
   dht.get(location, function (err, res) {
-    debugger
 
-   if(res === null){
-      console.log('\n  Error : ' + err);
-      console.log('\n  Let\'s republish what we had');
-      var r = jf.readFileSync('previousDHTQuery')
-      res.k = Buffer(r.k)
-      res.v = Buffer(r.v)
-      res.sig = Buffer(r.sign)
+    debugger;
+    var r = jf.readFileSync('previousDHTQuery')
+    var updateFromLocal = false
+    var store = false
+
+    console.log('\n  Received : ' + res.v.toString())
+
+    if(res === null){
+      console.log('\n  DHT Empty - let\'s rewrite');
+      updateFromLocal = true
     }
-    else if (prev === res.v){
+    else if (res.seq < r.seq){
+      console.log('\n  DHT Outdated - let\'s update');
+      updateFromLocal = true
+    }
+    else if (res.seq === r.seq){
       console.log('\n  Nothing new')
     }
+    else if (res.seq > r.seq){
+      console.log('\n  New content ! ')
+      store = true
+    }
+
+    if(updateFromLocal){
+      var opts = {
+        k: Buffer(r.k, 'hex'),
+        seq: r.seq,
+        v: Buffer(r.v, 'hex'),
+        sign: Buffer(r.sign, 'hex')
+      }
+    }
     else{
-      console.log('\n  New content : ' + res.v.toString())
-      prev = res.v
+      var opts = {
+        k: res.k,
+        seq: res.seq,
+        v: res.v,
+        sign: res.sig
+      }
     }
 
+    // Store token if update found
+    if (store) jf.writeFileSync('previousDHTQuery', opts)
 
-    console.log('\n  Updating...')
-
-    var opts = {
-      k: res.k,
-      seq: res.seq,
-      v: res.v,
-      sign: res.sig
-    }
-
-    jf.writeFileSync('previousDHTQuery', opts)
-
-    dht.put(res,function(err, hash){
+    console.log('\n  Updating slot ' +  opts.k.toString('hex'))
+    dht.put(opts,function(err, hash){
       if(err){
         console.log('\n  Error while putting stuff >> ' + err)
         return
       }
       console.log('\n  Just put some stuff there : ' + hash.toString('hex'));
     })
-
-
   })
 }

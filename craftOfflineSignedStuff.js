@@ -72,7 +72,7 @@ createTorrent("blog", function (err, torrent) {
 // Init DHT
 function initDht(){
   // DHT Object
-  dht = new DHT({ bootstrap: true, verify: ed.verify })
+  dht = new DHT({ bootstrap: false, verify: ed.verify })
   dht.on('ready', function () {
     console.log("\n  DHT reached")
     if (process.argv[3])
@@ -131,14 +131,13 @@ function pushStuff(){
 
     console.log('\n  Updating tokens')
     params.token++
-
     jf.writeFileSync(keySet, params)
 
     // Set opts
     opts = {
       k: pub,
       seq: params.token,
-      v: value,
+      v: 'bro',
       sign: function (buf) {
         var sig = ed.sign(buf, pub, priv)
         return sig
@@ -148,24 +147,18 @@ function pushStuff(){
 
   // Put stuff @ sha1(pubKey)!
   dht.put(opts, function (err, hash) {
-    if(err){
-      console.log('\n  Error : ' + err);
-      process.exit(1);
-    }
-    console.log("\n  DHT updated")
-    if(increment)
-      seed(dht)
-  })
-}
-
-function seed(ht){
-
-  // Flag no increment up
-  increment = false
-
-  // TODO be less dumb and reuse torrent generated earlier
-  var client = new WebTorrent({dht : ht})
-  client.seed('blog', function onTorrent (torrent) {
-      console.log('\n  Seeding - info hash:', torrent.infoHash)
+    dht.get(hash, function(err,res){
+      var options = {
+        k: res.k,
+        seq: res.seq,
+        v: res.v,
+        sign: res.sig
+      }
+      dht.put(options, function (err, hash) {
+        console.log('\n  Updated stuff stored !')
+        jf.writeFileSync('previousDHTQuery', options)
+        process.exit(0)
+      })
+    })
   })
 }
