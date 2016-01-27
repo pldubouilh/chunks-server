@@ -30,6 +30,7 @@ else{
 }
 
 
+var keyName = process.argv[2].split('.')[0] + '.local'
 var location = sha1.sync(pubkey)
 var value                     // Value will be set later
 
@@ -53,7 +54,7 @@ function republish(){
   dht.get(location, function (err, res) {
 
     debugger;
-    var r = jf.readFileSync('previousDHTQuery')
+    var r = jf.readFileSync(keyName)
     var updateFromLocal = false
     var store = false
 
@@ -93,7 +94,7 @@ function republish(){
     }
 
     // Store token if update found
-    if (store) jf.writeFileSync('previousDHTQuery', opts)
+    if (store) jf.writeFileSync(keyName , opts)
 
     console.log('\n  Updating slot ' +  opts.k.toString('hex'))
     dht.put(opts,function(err, hash){

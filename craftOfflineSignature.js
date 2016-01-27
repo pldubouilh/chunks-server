@@ -10,20 +10,8 @@ var ed = require('ed25519-supercop')
 var jf = require('jsonfile')
 var prompt = require('prompt');
 
-/*
-  - Assume user wants to share what's in blog
-
-  1/ Create torrent with what's inside seeding stuff
-  2/ Ask for password to decrypt priv key
-  3/ Push new content on DHT every 5mn
-  4/ Seed.
-*/
-
-var DELAYPUSH = 5 //mn
-
 // Key file name
 var keySet, dht, opts
-var increment = true
 
 if(process.argv[2]){
   keySet = process.argv[2]
@@ -36,6 +24,7 @@ else{
   process.exit(1);
 }
 
+var keyName = process.argv[2].split('.')[0] + '.local'
 
 // Read keys & token val
 var params = jf.readFileSync(keySet)
@@ -74,7 +63,7 @@ function initDht(){
   // DHT Object
   dht = new DHT({ bootstrap: false, verify: ed.verify })
   dht.on('ready', function () {
-    console.log("\n  DHT reached")
+
     if (process.argv[3])
       unlockKey(process.argv[3])
     else
@@ -123,25 +112,18 @@ function unlockKey(password){
 
 function pushStuff(){
 
-  // Refresh data on dht every DELAYPUSH mn
-  setTimeout(pushStuff, DELAYPUSH*60*1000);
+  console.log('\n  Updating tokens')
+  params.token++
+  jf.writeFileSync(keySet, params)
 
-  // Don't increment if coming from timeout
-  if (increment){
-
-    console.log('\n  Updating tokens')
-    params.token++
-    jf.writeFileSync(keySet, params)
-
-    // Set opts
-    opts = {
-      k: pub,
-      seq: params.token,
-      v: 'bro',
-      sign: function (buf) {
-        var sig = ed.sign(buf, pub, priv)
-        return sig
-      }
+  // Set opts
+  opts = {
+    k: pub,
+    seq: params.token,
+    v: value,
+    sign: function (buf) {
+      var sig = ed.sign(buf, pub, priv)
+      return sig
     }
   }
 
@@ -156,7 +138,7 @@ function pushStuff(){
       }
       dht.put(options, function (err, hash) {
         console.log('\n  Updated stuff stored !')
-        jf.writeFileSync('previousDHTQuery', options)
+        jf.writeFileSync(keyName, options)
         process.exit(0)
       })
     })
